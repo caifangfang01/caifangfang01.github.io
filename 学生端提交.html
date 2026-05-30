@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>数据搜集问卷 - 学生端</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: auto; /* PAD上保持可选可点 */
+        }
+        body {
+            font-family: system-ui, 'Segoe UI', 'Noto Sans', 'Helvetica Neue', sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        /* PAD 友好卡片 */
+        .pad-card {
+            max-width: 700px;
+            width: 100%;
+            margin: 16px auto;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        .header {
+            background: #2c7da0;
+            color: white;
+            padding: 24px 28px;
+        }
+        .header h1 {
+            margin: 0 0 8px 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 0;
+            opacity: 0.85;
+            font-size: 1rem;
+        }
+        .form-content {
+            padding: 28px 28px 36px;
+        }
+        .question-item {
+            margin-bottom: 36px;
+        }
+        .question-label {
+            font-weight: 600;
+            font-size: 1.3rem;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+            color: #1e2a3e;
+        }
+        .badge {
+            background: #e9ecef;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: normal;
+            color: #2c7da0;
+        }
+        /* 小组选项 - 大按钮风格，适合触屏 */
+        .group-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 8px;
+        }
+        .group-option {
+            flex: 1 0 auto;
+            min-width: 130px;
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 60px;
+            padding: 14px 8px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #2c3e4e;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: #ffffff;
+        }
+        .group-option.selected {
+            background: #2c7da0;
+            border-color: #2c7da0;
+            color: white;
+            box-shadow: 0 4px 12px rgba(44,125,160,0.3);
+        }
+        /* 数字输入框 */
+        .number-input {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 1.3rem;
+            border: 2px solid #dee2e6;
+            border-radius: 48px;
+            background: white;
+            font-weight: 500;
+            transition: 0.2s;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        .number-input:focus {
+            outline: none;
+            border-color: #2c7da0;
+            box-shadow: 0 0 0 3px rgba(44,125,160,0.2);
+        }
+        /* 辅助说明 */
+        .hint {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 8px;
+            margin-left: 12px;
+        }
+        /* 提交按钮 */
+        .submit-btn {
+            background: #1e7e34;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 18px 20px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 60px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .submit-btn:active {
+            transform: scale(0.97);
+            background: #146c2e;
+        }
+        /* 消息反馈区 */
+        .message-area {
+            margin-top: 24px;
+            padding: 14px;
+            border-radius: 28px;
+            background: #f1f3f5;
+            text-align: center;
+            font-size: 0.95rem;
+            color: #2c3e50;
+            transition: 0.2s;
+        }
+        .error-msg {
+            background: #ffe3e3;
+            color: #c7362b;
+        }
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+        }
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        footer {
+            padding: 16px 28px 24px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #adb5bd;
+            border-top: 1px solid #edf2f7;
+        }
+        @media (max-width: 600px) {
+            .pad-card { margin: 8px; }
+            .form-content { padding: 20px; }
+            .group-option { min-width: 110px; padding: 12px 5px; }
+            .question-label { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="pad-card" id="app">
+    <div class="header">
+        <h1>📋 幽默小达人 · 数据搜集</h1>
+        <p>请根据题目选择或填写，完成后提交即可</p>
+    </div>
+    <div class="form-content">
+        <!-- 题目1：小组名称（已纠正选项：古文一组、古文二组、古文三组、古文四组） -->
+        <div class="question-item">
+            <div class="question-label">
+                <span>📌 题目1：小组名称</span>
+                <span class="badge">必选</span>
+            </div>
+            <div class="group-options" id="groupOptions">
+                <div data-value="古文一组" class="group-option">古文一组</div>
+                <div data-value="古文二组" class="group-option">古文二组</div>
+                <div data-value="古文三组" class="group-option">古文三组</div>
+                <div data-value="古文四组" class="group-option">古文四组</div>
+            </div>
+        </div>
+
+        <!-- 题目2：回答次数（可自由填写数字） -->
+        <div class="question-item">
+            <div class="question-label">
+                <span>🔢 题目2：回答次数</span>
+                <span class="badge">数字</span>
+            </div>
+            <input type="number" id="answerCount" class="number-input" placeholder="请输入回答次数" value="1" min="0" step="1">
+            <div class="hint">✨ 自由填写，例如：3、5、10</div>
+        </div>
+
+        <button class="submit-btn" id="submitBtn">
+            ✨ 提交答案 ✨
+        </button>
+        <div id="messageBox" class="message-area">
+            等待提交...
+        </div>
+    </div>
+    <footer>
+        数据通过加密通道安全提交 | 接口: quickform.cn/api/gmvalfetfc
+    </footer>
+</div>
+
+<script>
+    // --- 状态管理 ---
+    let selectedGroup = "古文一组";     // 默认选中第一组
+    const groupElements = document.querySelectorAll('.group-option');
+    const answerCountInput = document.getElementById('answerCount');
+    const submitBtn = document.getElementById('submitBtn');
+    const messageBox = document.getElementById('messageBox');
+
+    // 小组选择事件绑定 (触屏+鼠标)
+    function updateGroupSelection(value) {
+        selectedGroup = value;
+        groupElements.forEach(el => {
+            if (el.getAttribute('data-value') === value) {
+                el.classList.add('selected');
+            } else {
+                el.classList.remove('selected');
+            }
+        });
+    }
+
+    groupElements.forEach(el => {
+        el.addEventListener('click', (e) => {
+            const groupVal = el.getAttribute('data-value');
+            updateGroupSelection(groupVal);
+            // 触屏反馈轻微震动效果可选，无须额外处理
+        });
+        // 增强触屏响应
+        el.addEventListener('touchstart', (e) => {
+            // 只为了提升响应速度，无逻辑冲突
+            e.preventDefault();
+            const groupVal = el.getAttribute('data-value');
+            updateGroupSelection(groupVal);
+        }, { passive: false });
+    });
+
+    // 初始化选中样式
+    updateGroupSelection('古文一组');
+
+    // 辅助显示消息
+    function showMessage(text, isError = false, isSuccess = false) {
+        messageBox.innerText = text;
+        messageBox.classList.remove('error-msg', 'success-msg');
+        if (isError) {
+            messageBox.classList.add('error-msg');
+        } else if (isSuccess) {
+            messageBox.classList.add('success-msg');
+        } else {
+            messageBox.classList.remove('error-msg', 'success-msg');
+        }
+        // 5秒后恢复普通提示（但不影响成功后的提示）
+        if (!isError) {
+            setTimeout(() => {
+                if (messageBox.innerText === text) {
+                    messageBox.classList.remove('error-msg', 'success-msg');
+                    if (!messageBox.innerText.includes('成功') && !messageBox.innerText.includes('错误')) {
+                        // 保留非错误非成功的过时提示不清空，但为了体验置灰提示
+                        if(messageBox.innerText !== '等待提交...') messageBox.innerText = '上次操作已完成';
+                    }
+                }
+            }, 5000);
+        }
+    }
+
+    // 主要提交逻辑 (POST 该接口)
+    async function submitAnswers() {
+        // 获取小组名称值
+        const groupName = selectedGroup;
+        // 获取回答次数（确保为有效整数）
+        let answerTimesRaw = answerCountInput.value.trim();
+        let answerTimes = parseInt(answerTimesRaw, 10);
+        if (isNaN(answerTimes)) {
+            showMessage('❌ 回答次数必须填写数字，例如 3', true);
+            return;
+        }
+        if (answerTimes < 0) {
+            showMessage('❌ 回答次数不能为负数，请输入 0 或正整数', true);
+            return;
+        }
+        // 虽然接口没有具体规定字段名，根据要求“展示数据搜集题目，接收学生答案，提交答题数据保存入库”，
+        // 最佳设计是发送JSON格式，并且遵照一般RESTful POST。由于未提供明确字段映射，但依据常规api可能会解析json或表单。
+        // 通过分析提供的接口GET返回的是submissions数组，推测后端可以接受相同结构的POST提交。
+        // 为最大兼容，我们构造包含两个主要题目的对象: group_name 和 reply_count. 也支持可能的task_id字段。
+        // 根据原接口展示 "task_title": "谁是幽默小达人" , "task_id": "gmvalfetfc" ，我们提交时附带上task_id有助于保存。
+        const submissionData = {
+            task_id: "gmvalfetfc",          // 来自于接口自身
+            group_name: groupName,           // 小组名称
+            reply_count: answerTimes,        // 回答次数
+            submitted_at: new Date().toISOString(), // 客户端时间戳（可选）
+            // 额外如果需要符合可能的数据结构，增加灵活字段
+            answers: {
+                question1: groupName,
+                question2: answerTimes
+            }
+        };
+        
+        // 显示loading状态
+        submitBtn.classList.add('loading');
+        const originalBtnText = submitBtn.innerText;
+        submitBtn.innerText = "⏳ 提交中...";
+        showMessage('正在提交数据，请稍后...', false);
+
+        try {
+            // 发送POST请求到指定的接口地址
+            const response = await fetch('https://quickform.cn/api/gmvalfetfc', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(submissionData)
+            });
+            
+            // 尝试解析响应（可能不是json，或是纯文本）
+            let responseData;
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                responseData = await response.json();
+            } else {
+                const text = await response.text();
+                responseData = { message: text, raw: true };
+            }
+            
+            if (response.ok) {
+                // 成功
+                showMessage(`✅ 提交成功！ 小组：${groupName}，回答次数：${answerTimes} 已保存。`, false, true);
+                // 可选：清空或保留表单，但保留学生已填内容，便于连续提交（但根据需求通常是一次提交）
+                // 这里不清空，但可以自动重置次数? 不重置, 让学生继续改继续提交也可以。
+                // 若有额外需求，可留待学生手动修改。
+            } else {
+                // 服务器返回错误状态
+                let errMsg = `提交失败 (${response.status})`;
+                if (responseData && responseData.message) errMsg += `: ${responseData.message}`;
+                else if (typeof responseData === 'string') errMsg += `: ${responseData}`;
+                showMessage(`❌ ${errMsg}`, true);
+                console.error('提交响应错误', responseData);
+            }
+        } catch (error) {
+            console.error('网络或请求异常:', error);
+            showMessage(`❌ 网络错误: ${error.message || '无法连接到服务器'}`, true);
+        } finally {
+            submitBtn.classList.remove('loading');
+            submitBtn.innerText = originalBtnText;
+        }
+    }
+
+    // 绑定提交按钮事件 (同时兼容鼠标和触摸)
+    submitBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        submitAnswers();
+    });
+    submitBtn.addEventListener('touchstart', (e) => {
+        // 防止触发两次，但click会在触屏触发，这里只做预防重复提交的标记，用防抖也可
+        if (submitBtn.classList.contains('loading')) {
+            e.preventDefault();
+            return;
+        }
+        // 不阻止默认以保证click也能触发，避免双重触发简单处理: 去掉touchstart的重复调用
+        // 为了稳定，只走click事件，但在PAD上无妨。
+    });
+    
+    // 如果用户使用键盘或者数字输入，增加回车辅助提交（方便外接键盘）
+    answerCountInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            submitAnswers();
+        }
+    });
+    
+    // 页面启动友好提示
+    console.log("PAD学生端已启动，接口地址:", "https://quickform.cn/api/gmvalfetfc");
+    // 可选：预检测接口连通性 (不额外打扰)
+</script>
+</body>
+</html>
